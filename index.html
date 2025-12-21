@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christmas Decoration Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0a2e1a;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #background-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        #speaker-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #speaker {
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.7));
+        }
+
+        #speaker:hover {
+            transform: scale(1.1);
+        }
+
+        #volume-control {
+            width: 100px;
+            opacity: 0;
+            transition: opacity 0.5s;
+            cursor: pointer;
+        }
+
+        #volume-control.show {
+            opacity: 1;
+        }
+
+        #hint-hand {
+            position: absolute;
+            bottom: 120px;
+            right: 150px;
+            width: 120px;
+            height: auto;
+            z-index: 10;
+            animation: pointing 2s infinite alternate ease-in-out;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
+        }
+
+        @keyframes pointing {
+            0% { transform: translateY(0) translateX(0); }
+            100% { transform: translateY(-20px) translateX(-10px); }
+        }
+
+        #decorations-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            max-height: 85vh;
+            background-color: rgba(10, 46, 26, 0.85);
+            border-radius: 15px;
+            padding: 15px;
+            z-index: 50;
+            overflow-y: auto;
+            border: 2px solid #c9a13a;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
+        }
+
+        .decoration-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: background-color 0.3s;
+        }
+
+        .decoration-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .decoration-image {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            margin-right: 10px;
+            border-radius: 5px;
+        }
+
+        .decoration-name {
+            flex-grow: 1;
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 5px rgba(0, 0, 0, 0.8);
+            margin-right: 10px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quantity-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #c9a13a;
+            color: #0a2e1a;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .quantity-btn:hover {
+            background-color: #e0b94c;
+            transform: scale(1.1);
+        }
+
+        .quantity-display {
+            min-width: 30px;
+            text-align: center;
+            font-weight: bold;
+            color: white;
+            font-size: 18px;
+        }
+
+        #decoration-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .placed-decoration {
+            position: absolute;
+            pointer-events: auto;
+            cursor: move;
+            transition: transform 0.2s;
+            z-index: 10;
+        }
+
+        .placed-decoration:hover {
+            transform: scale(1.05);
+            z-index: 100;
+        }
+
+        .decoration-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            white-space: nowrap;
+            font-family: 'Mountains of Christmas', cursive;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .placed-decoration:hover .decoration-label {
+            opacity: 1;
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(10, 46, 26, 0.85);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            max-width: 300px;
+            z-index: 50;
+            border: 1px solid #c9a13a;
+        }
+
+        /* Адаптация для мобильных устройств */
+        @media (max-width: 768px) {
+            #decorations-panel {
+                width: 280px;
+                max-height: 70vh;
+                right: 10px;
+                top: 10px;
+                padding: 10px;
+            }
+
+            .decoration-item {
+                margin-bottom: 8px;
+                padding: 6px;
+            }
+
+            .decoration-image {
+                width: 40px;
+                height: 40px;
+            }
+
+            .decoration-name {
+                font-size: 14px;
+            }
+
+            #hint-hand {
+                width: 80px;
+                bottom: 100px;
+                right: 100px;
+            }
+
+            #speaker {
+                width: 50px;
+                height: 50px;
+            }
+
+            #instructions {
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                max-width: none;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #decorations-panel {
+                width: 95%;
+                right: 2.5%;
+                top: 80px;
+                max-height: 60vh;
+            }
+
+            #hint-hand {
+                width: 60px;
+                bottom: 80px;
+                right: 50px;
+            }
+
+            .decoration-name {
+                font-size: 13px;
+            }
+        }
+
+        /* Стили для скроллбара */
+        #decorations-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #decorations-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        #decorations-panel::-webkit-scrollbar-thumb {
+            background: #c9a13a;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Фоновое видео -->
+        <video id="background-video" loop autoplay muted>
+            <source src=".decorations/VID_20251215_004802_048.mp4" type="video/mp4">
+            Ваш браузер не поддерживает видео.
+        </video>
+
+        <!-- Аудио колонка -->
+        <div id="speaker-container">
+            <img id="speaker" src=".decorations/IMG_20251221_115328_034.png" alt="Speaker">
+            <input type="range" id="volume-control" min="0" max="1" step="0.1" value="0.5">
+        </div>
+
+        <!-- Подсказка (рука) -->
+        <img id="hint-hand" src=".decorations/IMG_20251218_123028_020.png" alt="Hint hand">
+
+        <!-- Панель украшений -->
+        <div id="decorations-panel">
+            <!-- Украшения будут добавляться здесь через JavaScript -->
+        </div>
+
+        <!-- Область для размещения украшений -->
+        <div id="decoration-area"></div>
+
+        <!-- Инструкция -->
+        <div id="instructions">
+            <p>1. Выберите украшение на панели справа</p>
+            <p>2. Нажмите + чтобы добавить предметы</p>
+            <p>3. Кликните на поле, чтобы разместить украшения</p>
+            <p>4. Перетаскивайте украшения для перемещения</p>
+            <p>5. Кликните на украшение для произношения названия</p>
+        </div>
+    </div>
+
+    <!-- Аудио элементы -->
+    <audio id="background-music" loop>
+        <source src=".decorations/Untitled (25).mp3" type="audio/mp3">
+    </audio>
+
+    <script>
+        // Данные об украшениях
+        const decorations = [
+            // Орнаменты
+            { name: "Icicle Ornament", image: ".decorations/IMG_20251214_180216_915.png", audio: ".decorations/J-20251220122111451Z.mp3", type: "ornament" },
+            { name: "Teardrop Ornament", image: ".decorations/IMG_20251211_005054_690.png", audio: ".decorations/J-20251220122523667Z.mp3", type: "ornament" },
+            { name: "Ball Ornament / Bauble", image: ".decorations/IMG_20251211_004304_540.png", audio: ".decorations/J-20251220122727856Z.mp3", type: "ornament" },
+            { name: "Snowflake Ornament", image: ".decorations/IMG_20251211_004418_509.png", audio: ".decorations/J-20251220122848346Z.mp3", type: "ornament" },
+            { name: "Gingerbread Man Ornament", image: ".decorations/IMG_20251220_000507_146.png", audio: ".decorations/J-20251220123059796Z.mp3", type: "ornament" },
+            { name: "Heart-Shaped Ornament", image: ".decorations/IMG_20251211_005503_616.png", audio: ".decorations/J-20251220175552319Z.mp3", type: "ornament" },
+            { name: "Candy Cane Ornament", image: ".decorations/IMG_20251214_201752_067.png", audio: ".decorations/J-20251220175751503Z.mp3", type: "ornament" },
+            
+            // Фигурки
+            { name: "Angel Figurine", image: ".decorations/IMG_20251211_004230_328.png", audio: ".decorations/J-20251220180540830Z.mp3", type: "figurine" },
+            { name: "Nutcracker Figurine", image: ".decorations/IMG_20251211_093218_373.png", audio: ".decorations/J-20251220180859137Z.mp3", type: "figurine" },
+            { name: "Santa Claus Figurine", image: ".decorations/IMG_20251220_000512_026.png", audio: ".decorations/J-20251220183344550Z.mp3", type: "figurine" },
+            
+            // Верхушки для елки
+            { name: "Snowflake Tree Topper", image: ".decorations/IMG_20251211_093113_721.png", audio: ".decorations/J-20251220184002440Z.mp3", type: "topper" },
+            { name: "Finial Tree Topper", image: ".decorations/IMG_20251216_234123_846.png", audio: ".decorations/J-20251220184143618Z.mp3", type: "topper" },
+            { name: "Bow Tree Topper", image: ".decorations/IMG_20251218_155159_116.png", audio: ".decorations/J-20251220184357232Z.mp3", type: "topper" },
+            
+            // Гирлянды
+            { name: "Bell Garland", image: ".decorations/IMG_20251214_201245_533.png", audio: ".decorations/J-20251220191319842Z.mp3", type: "garland" },
+            { name: "Popcorn Curtain Garland", image: ".decorations/IMG_20251215_004926_388.png", audio: ".decorations/J-20251220191507498Z.mp3", type: "garland" },
+            { name: "Tinsel Garland", image: ".decorations/IMG_20251218_155813_209.png", audio: ".decorations/J-20251220193719152Z.mp3", type: "garland" },
+            { name: "Christmas Balloon Garland", image: ".decorations/IMG_20251215_155120_152.png", audio: ".decorations/J-20251220193923303Z.mp3", type: "garland" },
+            { name: "3-Layer Crystal Garland", image: ".decorations/IMG_20251215_015830_622.png", audio: ".decorations/J-20251220194102666Z.mp3", type: "garland" },
+            { name: "Snowball garland", image: ".decorations/IMG_20251219_234642_825.png", audio: ".decorations/ttsmaker-file-2025-12-20-23-47-15.mp3", type: "garland" },
+            
+            // Прочие украшения
+            { name: "Snow Flocked Christmas Wreath", image: ".decorations/IMG_20251211_011505_386.png", audio: ".decorations/ttsmaker-file-2025-12-20-23-52-20.mp3", type: "decoration" },
+            { name: "Christmas Stocking", image: ".decorations/IMG_20251214_203335_239.png", audio: ".decorations/ttsmaker-file-2025-12-20-23-53-52.mp3", type: "decoration" },
+            { name: "Christmas Advent Calendar", image: ".decorations/IMG_20251218_145917_560.png", audio: ".decorations/ttsmaker-file-2025-12-20-23-56-59.mp3", type: "decoration" },
+            { name: "Advent candle", image: ".decorations/InShot_20251219_142925035.png", audio: ".decorations/ttsmaker-file-2025-12-21-0-29-43.mp3", type: "decoration" },
+            { name: "Santa Hat", image: ".decorations/IMG_20251216_231500_180.png", audio: ".decorations/ttsmaker-file-2025-12-21-0-30-56.mp3", type: "decoration" },
+            
+            // Освещение
+            { name: "Snowflake String Lights", image: ".decorations/InShot_20251215_081253630.png", audio: ".decorations/ttsmaker-file-2025-12-21-0-32-15.mp3", type: "lights" },
+            { name: "Icicle Lights", image: ".decorations/InShot_20251215_112552383.png", audio: ".decorations/ttsmaker-file-2025-12-21-0-34-30.mp3", type: "lights" },
+            { name: "Festoon Lights", image: ".decorations/IMG_20251215_102454_415.png", audio: ".decorations/J-20251220203552630Z.mp3", type: "lights" },
+            { name: "Net Lights", image: ".decorations/InShot_20251215_112737477.png", audio: ".decorations/J-20251220203656820Z.mp3", type: "lights" },
+            
+            // Елки и декорации
+            { name: "Fir Fibre-Optic Christmas Tree", image: ".decorations/IMG_20251218_184815_118.png", audio: ".decorations/J-20251220203928432Z.mp3", type: "tree" },
+            { name: "Foil Fringe Backdrop Curtains", image: ".decorations/IMG_20251219_103223_517.jpg", audio: ".decorations/J-20251220204112216Z.mp3", type: "decoration" },
+            { name: "Christmas Snow Globe Lantern", image: ".decorations/IMG_20251215_000545_246.png", audio: ".decorations/J-20251220204223361Z.mp3", type: "decoration" },
+            { name: "Paper Lantern", image: ".decorations/IMG_20251215_114953_814.png", audio: ".decorations/J-20251220204324773Z.mp3", type: "decoration" },
+            { name: "3D Thundercloud LED Light", image: ".decorations/IMG_20251215_015827_723.png", audio: ".decorations/J-20251220204432232Z.mp3", type: "lights" },
+            { name: "Christmas Train Set", image: ".decorations/IMG_20251215_152334_926.png", audio: ".decorations/ttsmaker-file-2025-12-21-1-7-34.mp3", type: "decoration" },
+            { name: "LED Reindeer Decoration", image: ".decorations/IMG_20251215_113040_742.png", audio: ".decorations/J-20251221071421013Z.mp3", type: "decoration" },
+            { name: "LED Snowman Decoration", image: ".decorations/IMG_20251218_111555_162.png", audio: ".decorations/J-20251221071532595Z.mp3", type: "decoration" },
+            { name: "Gingerbread House Decoration", image: ".decorations/IMG_20251214_225143_623.png", audio: ".decorations/J-20251221071639048Z.mp3", type: "decoration" },
+            { name: "Disco Ball / Mirror Ball", image: ".decorations/IMG_20251215_152347_760.png", audio: ".decorations/J-20251221071742727Z.mp3", type: "decoration" },
+            { name: "Fireplace", image: ".decorations/IMG_20251219_101224_126.jpg", audio: ".decorations/J-20251221071842000Z.mp3", type: "decoration" },
+            { name: "Snow Blanket", image: ".decorations/InShot_20251220_000717881.png", audio: ".decorations/J-20251221071945508Z.mp3", type: "decoration" },
+            { name: "Ribbon Bow", image: ".decorations/IMG_20251211_093143_419.png", audio: ".decorations/J-20251220183733800Z.mp3", type: "ornament" }
+        ];
+
+        // Глобальные переменные
+        let selectedDecoration = null;
+        let decorationQuantities = {};
+        let placedDecorations = [];
+        let isDragging = false;
+        let currentDraggedElement = null;
+        let offsetX = 0, offsetY = 0;
+        let backgroundMusic = document.getElementById('background-music');
+        let isMusicPlaying = false;
+
+        // Инициализация игры
+        function initGame() {
+            // Инициализация количеств украшений
+            decorations.forEach(decoration => {
+                decorationQuantities[decoration.name] = 0;
+            });
+
+            // Создание панели украшений
+            createDecorationPanel();
+
+            // Настройка аудио
+            setupAudio();
+
+            // Настройка обработчиков событий
+            setupEventListeners();
+
+            // Запуск фонового видео
+            document.getElementById('background-video').play();
+        }
+
+        // Создание панели украшений
+        function createDecorationPanel() {
+            const panel = document.getElementById('decorations-panel');
+            
+            decorations.forEach((decoration, index) => {
+                const item = document.createElement('div');
+                item.className = 'decoration-item';
+                item.dataset.name = decoration.name;
+                
+                item.innerHTML = `
+                    <img class="decoration-image" src="${decoration.image}" alt="${decoration.name}">
+                    <div class="decoration-name">${decoration.name}</div>
+                    <div class="quantity-controls">
+                        <button class="quantity-btn minus" data-name="${decoration.name}">-</button>
+                        <div class="quantity-display" id="quantity-${index}">0</div>
+                        <button class="quantity-btn plus" data-name="${decoration.name}">+</button>
+                    </div>
+                `;
+                
+                panel.appendChild(item);
+                
+                // Обработчики для кнопок +/-
+                const plusBtn = item.querySelector('.plus');
+                const minusBtn = item.querySelector('.minus');
+                
+                plusBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    increaseQuantity(decoration.name, index);
+                });
+                
+                minusBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    decreaseQuantity(decoration.name, index);
+                });
+                
+                // Выбор украшения при клике на элемент
+                item.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('quantity-btn')) {
+                        selectDecoration(decoration.name);
+                    }
+                });
+            });
+        }
+
+        // Увеличение количества украшения
+        function increaseQuantity(name, index) {
+            decorationQuantities[name]++;
+            document.getElementById(`quantity-${index}`).textContent = decorationQuantities[name];
+            
+            // Если выбрано это украшение, активируем его
+            if (selectedDecoration === name) {
+                selectDecoration(name);
+            }
+        }
+
+        // Уменьшение количества украшения
+        function decreaseQuantity(name, index) {
+            if (decorationQuantities[name] > 0) {
+                decorationQuantities[name]--;
+                document.getElementById(`quantity-${index}`).textContent = decorationQuantities[name];
+                
+                // Если количество стало 0 и это выбранное украшение, снимаем выбор
+                if (decorationQuantities[name] === 0 && selectedDecoration === name) {
+                    selectedDecoration = null;
+                    document.querySelectorAll('.decoration-item').forEach(item => {
+                        item.style.backgroundColor = '';
+                    });
+                }
+            }
+        }
+
+        // Выбор украшения
+        function selectDecoration(name) {
+            if (decorationQuantities[name] > 0) {
+                selectedDecoration = name;
+                
+                // Сбрасываем выделение всех элементов
+                document.querySelectorAll('.decoration-item').forEach(item => {
+                    item.style.backgroundColor = '';
+                });
+                
+                // Выделяем выбранный элемент
+                const selectedItem = document.querySelector(`.decoration-item[data-name="${name}"]`);
+                if (selectedItem) {
+                    selectedItem.style.backgroundColor = 'rgba(201, 161, 58, 0.4)';
+                }
+            }
+        }
+
+        // Настройка аудио
+        function setupAudio() {
+            const speaker = document.getElementById('speaker');
+            const volumeControl = document.getElementById('volume-control');
+            
+            // Воспроизведение/пауза фоновой музыки при клике на колонку
+            speaker.addEventListener('click', () => {
+                if (isMusicPlaying) {
+                    backgroundMusic.pause();
+                    volumeControl.classList.remove('show');
+                } else {
+                    backgroundMusic.play();
+                    volumeControl.classList.add('show');
+                    backgroundMusic.volume = volumeControl.value;
+                }
+                isMusicPlaying = !isMusicPlaying;
+            });
+            
+            // Регулировка громкости
+            volumeControl.addEventListener('input', () => {
+                backgroundMusic.volume = volumeControl.value;
+            });
+            
+            // Автовоспроизведение с низкой громкостью
+            backgroundMusic.volume = 0.3;
+            volumeControl.value = 0.3;
+        }
+
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            const decorationArea = document.getElementById('decoration-area');
+            
+            // Размещение украшения при клике на игровое поле
+            decorationArea.addEventListener('click', (e) => {
+                if (selectedDecoration && decorationQuantities[selectedDecoration] > 0) {
+                    placeDecoration(selectedDecoration, e.clientX, e.clientY);
+                    decorationQuantities[selectedDecoration]--;
+                    
+                    // Обновляем отображение количества
+                    updateQuantityDisplay(selectedDecoration);
+                    
+                    // Если количество стало 0, снимаем выбор
+                    if (decorationQuantities[selectedDecoration] === 0) {
+                        selectedDecoration = null;
+                        document.querySelectorAll('.decoration-item').forEach(item => {
+                            item.style.backgroundColor = '';
+                        });
+                    }
+                }
+            });
+            
+            // Обработчики для перетаскивания украшений
+            decorationArea.addEventListener('mousedown', startDragging);
+            decorationArea.addEventListener('touchstart', startDraggingTouch);
+            
+            document.addEventListener('mousemove', dragDecoration);
+            document.addEventListener('touchmove', dragDecorationTouch);
+            
+            document.addEventListener('mouseup', stopDragging);
+            document.addEventListener('touchend', stopDragging);
+            
+            // Предотвращение контекстного меню
+            decorationArea.addEventListener('contextmenu', (e) => e.preventDefault());
+        }
+
+        // Обновление отображения количества
+        function updateQuantityDisplay(name) {
+            const index = decorations.findIndex(d => d.name === name);
+            if (index !== -1) {
+                document.getElementById(`quantity-${index}`).textContent = decorationQuantities[name];
+            }
+        }
+
+        // Размещение украшения на поле
+        function placeDecoration(name, x, y) {
+            const decoration = decorations.find(d => d.name === name);
+            if (!decoration) return;
+            
+            const decorationArea = document.getElementById('decoration-area');
+            
+            // Создаем элемент украшения
+            const decorationElement = document.createElement('div');
+            decorationElement.className = 'placed-decoration';
+            decorationElement.dataset.name = name;
+            
+            // Определяем размер в зависимости от типа украшения
+            let size = 70;
+            if (decoration.type === 'topper') size = 90;
+            if (decoration.type === 'garland') size = 120;
+            if (decoration.type === 'tree') size = 150;
+            if (decoration.type === 'lights') size = 80;
+            if (decoration.type === 'figurine') size = 85;
+            
+            // Позиционируем с учетом границ
+            const rect = decorationArea.getBoundingClientRect();
+            const posX = Math.max(20, Math.min(x - rect.left - size/2, rect.width - size - 20));
+            const posY = Math.max(20, Math.min(y - rect.top - size/2, rect.height - size - 20));
+            
+            decorationElement.style.left = `${posX}px`;
+            decorationElement.style.top = `${posY}px`;
+            decorationElement.style.width = `${size}px`;
+            decorationElement.style.height = `${size}px`;
+            
+            decorationElement.innerHTML = `
+                <img src="${decoration.image}" alt="${decoration.name}" style="width:100%; height:100%; object-fit:contain;">
+                <div class="decoration-label">${decoration.name}</div>
+            `;
+            
+            decorationArea.appendChild(decorationElement);
+            
+            // Добавляем обработчик для произношения названия
+            decorationElement.addEventListener('click', (e) => {
+                if (!isDragging) {
+                    playDecorationAudio(decoration.audio);
+                }
+            });
+            
+            // Сохраняем информацию о размещенном украшении
+            placedDecorations.push({
+                element: decorationElement,
+                name: name,
+                x: posX,
+                y: posY
+            });
+        }
+
+        // Воспроизведение аудио с произношением названия
+        function playDecorationAudio(audioSrc) {
+            const audio = new Audio(audioSrc);
+            audio.play().catch(e => console.log("Аудио не воспроизводится:", e));
+        }
+
+        // Начало перетаскивания (мышь)
+        function startDragging(e) {
+            if (e.target.closest('.placed-decoration')) {
+                isDragging = true;
+                currentDraggedElement = e.target.closest('.placed-decoration');
+                
+                const rect = currentDraggedElement.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+                
+                e.preventDefault();
+            }
+        }
+
+        // Начало перетаскивания (касание)
+        function startDraggingTouch(e) {
+            if (e.target.closest('.placed-decoration')) {
+                isDragging = true;
+                currentDraggedElement = e.target.closest('.placed-decoration');
+                
+                const touch = e.touches[0];
+                const rect = currentDraggedElement.getBoundingClientRect();
+                offsetX = touch.clientX - rect.left;
+                offsetY = touch.clientY - rect.top;
+                
+                e.preventDefault();
+            }
+        }
+
+        // Перетаскивание украшения (мышь)
+        function dragDecoration(e) {
+            if (!isDragging || !currentDraggedElement) return;
+            
+            const decorationArea = document.getElementById('decoration-area');
+            const rect = decorationArea.getBoundingClientRect();
+            
+            // Вычисляем новые координаты с учетом границ
+            const size = parseInt(currentDraggedElement.style.width);
+            const newX = Math.max(0, Math.min(e.clientX - rect.left - offsetX, rect.width - size));
+            const newY = Math.max(0, Math.min(e.clientY - rect.top - offsetY, rect.height - size));
+            
+            currentDraggedElement.style.left = `${newX}px`;
+            currentDraggedElement.style.top = `${newY}px`;
+            
+            e.preventDefault();
+        }
+
+        // Перетаскивание украшения (касание)
+        function dragDecorationTouch(e) {
+            if (!isDragging || !currentDraggedElement) return;
+            
+            const touch = e.touches[0];
+            const decorationArea = document.getElementById('decoration-area');
+            const rect = decorationArea.getBoundingClientRect();
+            
+            // Вычисляем новые координаты с учетом границ
+            const size = parseInt(currentDraggedElement.style.width);
+            const newX = Math.max(0, Math.min(touch.clientX - rect.left - offsetX, rect.width - size));
+            const newY = Math.max(0, Math.min(touch.clientY - rect.top - offsetY, rect.height - size));
+            
+            currentDraggedElement.style.left = `${newX}px`;
+            currentDraggedElement.style.top = `${newY}px`;
+            
+            e.preventDefault();
+        }
+
+        // Остановка перетаскивания
+        function stopDragging() {
+            isDragging = false;
+            currentDraggedElement = null;
+        }
+
+        // Адаптация к размеру экрана
+        function handleResize() {
+            // Можно добавить дополнительную логику адаптации при необходимости
+        }
+
+        // Инициализация при загрузке страницы
+        window.addEventListener('load', initGame);
+        window.addEventListener('resize', handleResize);
+    </script>
+</body>
+</html>
